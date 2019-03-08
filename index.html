@@ -1,0 +1,108 @@
+<!DOCTYPE HTML>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    html { 
+      font-family: Helvetica; 
+      display: inline-block; 
+      margin: 0px auto; 
+      text-align: center;
+    }
+    .button { 
+      -webkit-user-select: none; 
+      -moz-user-select: none; 
+      -ms-user-select: none; 
+      user-select: none; 
+      background-color: #4CAF50;
+      border: none; 
+      color: white; 
+      padding: 12px 28px; 
+      text-decoration: none; 
+      font-size: 26px; 
+      margin: 1px; 
+      cursor: pointer;
+    }
+    .button2 {
+      background-color: #555555;
+    }
+  </style>
+</head>
+
+<body>
+  <div>
+      <p><a href=/forward><button class="button" onclick="moveForward()">FORWARD</button></a></p>
+      <div style="clear: both;">
+        <p>
+          <a href="/left"><button class="button" onclick="moveLeft()">LEFT </button></a>
+          <a href="/stop"><button class="button button2" onclick="stopRobot()">STOP</button></a>
+          <a href="/right"><button class="button">RIGHT</button></a>
+        </p>
+      </div>
+      <p><a href="/reverse"><button class="button">REVERSE</button></a></p>
+      <input type="range" min="0" max="100" step="25" id="motorSlider" onchange="motorSpeed(this.value)" value=" + valueString + "/>
+  </div>
+
+
+    <button onclick="activateMotionControl()">Activate motion control</button>
+    <button onclick="deActivateMotionControl()">Deactivate motion control</button>
+    <pre class="output"></pre>
+</body>
+
+<script>
+  let motionControl = false;
+  let output = document.querySelector('.output');
+  let lastMove = '';
+
+  const activateMotionControl = () => {
+    window.addEventListener('deviceorientation', handleMotion);
+    motionControl = true;
+    console.log('motion controll is: ', motionControl)
+  }
+
+  const deActivateMotionControl = () => {
+    window.removeEventListener('deviceorientation', handleMotion);
+    motionControl = false;
+    console.log('motion controll is: ', motionControl)
+  }
+
+  handleMotion = (event) => {
+    let x = event.beta;  // In degree in the range [-180,180]
+    let y = event.gamma; // In degree in the range [-90,90]
+
+    
+
+    // Because we don't want to have the device upside down
+    // We constrain the x value to the range [-90,90]
+    if (x >  90) { x =  90};
+    if (x < -90) { x = -90};
+
+    // To make computation easier we shift the range of 
+    // x and y to [0,180]
+    x += 90;
+    y += 90;
+    output.innerHTML  = "x : " + x + "\n";
+    output.innerHTML += "y: " + y + "\n";
+
+    if(y <= 70) goInDirection('left');
+    if(y > 110) goInDirection('right');
+    if(x <= 70) goInDirection('forward');
+    if(x > 110) goInDirection('reverse');
+    if(110 > x > 70 && 110 > y > 70) goInDirection('stop');
+  }
+
+  const goInDirection = (direction) => {
+    if(lastMove !== direction){
+      lastMove = direction;
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', "/" + direction, true); 
+      xhr.send();
+    }
+  }
+
+  function motorSpeed(pos) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', "/?value=" + pos + "&", true); 
+    xhr.send(); 
+  } 
+</script>
+<html>
